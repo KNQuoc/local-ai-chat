@@ -8,7 +8,7 @@ const localAI = createOpenAI({
 })
 
 export async function POST(req: Request) {
-  const { messages, model = "llama3.1:8b", maxTokens = 4096 } = await req.json()
+  const { messages, model = "llama3.1:8b", maxTokens = 8192 } = await req.json()
 
   try {
     const result = await streamText({
