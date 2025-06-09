@@ -75,14 +75,14 @@ export const SettingsPanel = ({
             </div>
           ) : (
             <Select value={settings.selectedModel} onValueChange={(value) => updateSettings({ selectedModel: value })}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                 {availableModels.map((model) => (
-                  <SelectItem key={model.name} value={model.name}>
+                  <SelectItem key={model.name} value={model.name} className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <div className="flex flex-col">
-                      <span className="font-medium">{model.name}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{model.name}</span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {model.parameter_size} • {formatModelSize(model.size)} • {model.quantization}
                       </span>
@@ -107,7 +107,7 @@ export const SettingsPanel = ({
             type="number"
             value={settings.maxTokens}
             onChange={(e) => updateSettings({ maxTokens: parseInt(e.target.value) || 4096 })}
-            className="mt-1"
+            className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
             min="1024"
             max="32768"
             step="1024"
@@ -151,13 +151,13 @@ export const SettingsPanel = ({
                   })
                 }
               >
-                <SelectTrigger className="w-full mt-1">
+                <SelectTrigger className="w-full mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="Select image provider" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="stable-diffusion">Stable Diffusion (Local)</SelectItem>
-                  <SelectItem value="openai">OpenAI DALL-E</SelectItem>
-                  <SelectItem value="replicate">Replicate</SelectItem>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                  <SelectItem value="stable-diffusion" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">Stable Diffusion (Local)</SelectItem>
+                  <SelectItem value="openai" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">OpenAI DALL-E</SelectItem>
+                  <SelectItem value="replicate" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">Replicate</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -178,7 +178,7 @@ export const SettingsPanel = ({
                     } 
                   })}
                   placeholder="http://localhost:7860"
-                  className="mt-1"
+                  className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             )}
@@ -199,7 +199,7 @@ export const SettingsPanel = ({
                     } 
                   })}
                   placeholder="sk-..."
-                  className="mt-1"
+                  className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             )}
@@ -220,7 +220,7 @@ export const SettingsPanel = ({
                     } 
                   })}
                   placeholder="r8_..."
-                  className="mt-1"
+                  className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             )}
@@ -241,13 +241,13 @@ export const SettingsPanel = ({
                     })
                   }
                 >
-                  <SelectTrigger className="w-full mt-1">
+                  <SelectTrigger className="w-full mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="512x512">512×512</SelectItem>
-                    <SelectItem value="768x768">768×768</SelectItem>
-                    <SelectItem value="1024x1024">1024×1024</SelectItem>
+                  <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                    <SelectItem value="512x512" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">512×512</SelectItem>
+                    <SelectItem value="768x768" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">768×768</SelectItem>
+                    <SelectItem value="1024x1024" className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700">1024×1024</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -268,7 +268,7 @@ export const SettingsPanel = ({
                       defaultSteps: parseInt(e.target.value) || 20 
                     } 
                   })}
-                  className="mt-1"
+                  className="mt-1 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>

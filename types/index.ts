@@ -4,6 +4,7 @@ export type SavedConversation = {
     messages: Array<{ id: string; role: "user" | "system" | "assistant" | "data"; content: string }>
     timestamp: string
     model: string
+    files?: UploadedFile[]
 }
 
 export type OllamaModel = {
@@ -25,4 +26,15 @@ export type ChatSettings = {
         defaultSize: string
         defaultSteps: number
     }
+}
+
+export type UploadedFile = {
+    id: string
+    name: string
+    type: string
+    size: number
+    content: string
+    uploadedAt: string
+    status: 'processing' | 'ready' | 'error'
+    error?: string
 } 

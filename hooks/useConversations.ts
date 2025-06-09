@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { SavedConversation, ChatSettings } from '@/types'
+import { SavedConversation, ChatSettings, UploadedFile } from '@/types'
 import { STORAGE_KEYS } from '@/constants'
 import { generateTitle } from '@/utils'
 
@@ -50,7 +50,7 @@ export const useConversations = (messages: any[], settings: ChatSettings) => {
     }
 
     // Save current conversation to localStorage
-    const saveCurrentConversation = useCallback(() => {
+    const saveCurrentConversation = useCallback((conversationFiles?: UploadedFile[]) => {
         if (!currentConversationId || messages.length === 0) return
 
         // Clear any existing timeout
@@ -71,7 +71,7 @@ export const useConversations = (messages: any[], settings: ChatSettings) => {
                     )
 
                 // If no changes, return previous state to avoid re-render
-                if (!hasNewMessages && existingConv) return prev
+                if (!hasNewMessages && existingConv && !conversationFiles) return prev
 
                 let conversationTitle = existingConv?.title || generateTitle(messages)
 
@@ -88,7 +88,8 @@ export const useConversations = (messages: any[], settings: ChatSettings) => {
                     })),
                     // Only update timestamp if there are actually new messages
                     timestamp: hasNewMessages ? new Date().toLocaleString() : (existingConv?.timestamp || new Date().toLocaleString()),
-                    model: settings.selectedModel
+                    model: settings.selectedModel,
+                    files: conversationFiles || existingConv?.files || []
                 }
 
                 // Generate AI title asynchronously if needed
@@ -126,6 +127,28 @@ export const useConversations = (messages: any[], settings: ChatSettings) => {
             })
         }, 200) // 200ms debounce
     }, [currentConversationId, messages, settings.selectedModel])
+
+    // Update files for current conversation
+    const updateConversationFiles = useCallback((files: UploadedFile[]) => {
+        if (!currentConversationId) return
+
+        setSavedConversations(prev => {
+            const updated = prev.map(conv =>
+                conv.id === currentConversationId
+                    ? { ...conv, files }
+                    : conv
+            )
+            localStorage.setItem(STORAGE_KEYS.CONVERSATIONS, JSON.stringify(updated))
+            return updated
+        })
+    }, [currentConversationId])
+
+    // Get files for current conversation
+    const getCurrentConversationFiles = useCallback((): UploadedFile[] => {
+        if (!currentConversationId) return []
+        const conversation = savedConversations.find(c => c.id === currentConversationId)
+        return conversation?.files || []
+    }, [currentConversationId, savedConversations])
 
     // Generate AI title for current conversation
     const generateTitleForCurrent = async () => {
@@ -174,6 +197,8 @@ export const useConversations = (messages: any[], settings: ChatSettings) => {
         setIsLoadingConversation,
         saveCurrentConversation,
         generateTitleForCurrent,
-        deleteConversation
+        deleteConversation,
+        updateConversationFiles,
+        getCurrentConversationFiles
     }
 } 

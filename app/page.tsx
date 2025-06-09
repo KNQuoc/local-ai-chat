@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useChat } from "ai/react"
-import { Send, Plus, Menu, Sparkles, Image, Palette } from "lucide-react"
+import { Send, Menu, Sparkles, Image, Palette } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -14,6 +14,7 @@ import { useModels } from "@/hooks/useModels"
 import { useConversations } from "@/hooks/useConversations"
 import { useImageGeneration } from "@/hooks/useImageGeneration"
 import { useSidebar } from "@/hooks/useSidebar"
+import { useFileUpload } from "@/hooks/useFileUpload"
 
 // Components
 import { Sidebar } from "@/components/Sidebar"
@@ -23,19 +24,17 @@ import { SavedConversation } from "@/types"
 
 export default function ChatInterface() {
   const [showSettings, setShowSettings] = useState(false)
+  const [showFileUpload, setShowFileUpload] = useState(false)
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Custom hooks
   const { settings, isDarkMode, updateSettings, toggleDarkMode } = useSettings()
   const { sidebarOpen, setSidebarOpen, sidebarWidth, isResizing, handleMouseDown } = useSidebar()
-  
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages } = useChat({
-    api: "/api/chat",
-    body: {
-      model: settings.selectedModel,
-      maxTokens: settings.maxTokens
-    }
+
+  // Initialize conversation hooks first
+  const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, setMessages } = useChat({
+    api: "/api/chat"
   })
 
   const {
@@ -47,8 +46,38 @@ export default function ChatInterface() {
     setIsLoadingConversation,
     saveCurrentConversation,
     generateTitleForCurrent,
-    deleteConversation
+    deleteConversation,
+    updateConversationFiles,
+    getCurrentConversationFiles
   } = useConversations(messages, settings)
+
+  const currentFiles = getCurrentConversationFiles()
+  
+  const { 
+    isUploading, 
+    uploadFile, 
+    removeFile, 
+    clearAllFiles, 
+    getFileContext 
+  } = useFileUpload(currentFiles, updateConversationFiles)
+
+  // Custom submit with file context
+  const handleSubmit = (e: React.FormEvent) => {
+    const fileContext = getFileContext()
+    console.log('Current files:', currentFiles)
+    console.log('Ready files:', currentFiles.filter(f => f.status === 'ready'))
+    console.log('Generated file context:', fileContext)
+    console.log('File context length:', fileContext.length)
+    
+    // Update the chat body with current file context
+    originalHandleSubmit(e, {
+      body: {
+        model: settings.selectedModel,
+        maxTokens: settings.maxTokens,
+        fileContext: fileContext
+      }
+    })
+  }
 
   const { availableModels, modelsLoading, modelsError, loadAvailableModels } = useModels(
     showSettings, 
@@ -57,6 +86,14 @@ export default function ChatInterface() {
   )
 
   const { isGeneratingImage, generateImage } = useImageGeneration()
+
+  // Create a conversation ID on app load if none exists and there are no saved conversations
+  useEffect(() => {
+    if (!currentConversationId && savedConversations.length === 0) {
+      const newId = Date.now().toString()
+      setCurrentConversationId(newId)
+    }
+  }, [currentConversationId, savedConversations.length, setCurrentConversationId])
 
   // Save current conversation whenever messages change (but not when just loading)
   useEffect(() => {
@@ -78,12 +115,21 @@ export default function ChatInterface() {
     }
   }, [messages, shouldAutoScroll])
 
+  // Handle input focus - create conversation ID if needed
+  const handleInputFocus = () => {
+    if (!currentConversationId) {
+      const newId = Date.now().toString()
+      setCurrentConversationId(newId)
+    }
+  }
+
   // Start a new conversation
   const startNewConversation = () => {
     const newId = Date.now().toString()
     setCurrentConversationId(newId)
     setMessages([])
     setSidebarOpen(false)
+    setShowFileUpload(false)
   }
 
   // Load a saved conversation
@@ -93,6 +139,7 @@ export default function ChatInterface() {
     setCurrentConversationId(conversation.id)
     setMessages(conversation.messages)
     setSidebarOpen(false)
+    setShowFileUpload(false)
     
     setTimeout(() => {
       setShouldAutoScroll(true)
@@ -132,7 +179,7 @@ export default function ChatInterface() {
       }
       
       setMessages([...messages, userMessage, imageMessage])
-      handleInputChange({ target: { value: '' } } as any)
+      handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)
       
       if (!currentConversationId) {
         const newId = Date.now().toString()
@@ -152,7 +199,7 @@ export default function ChatInterface() {
       }
       
       setMessages([...messages, userMessage, errorMessage])
-      handleInputChange({ target: { value: '' } } as any)
+      handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)
     }
   }
 
@@ -179,7 +226,15 @@ export default function ChatInterface() {
     deleteConversation,
     isResizing,
     handleMouseDown,
-    settingsPanelProps
+    settingsPanelProps,
+    // File upload props
+    currentFiles,
+    isUploading,
+    onFileUpload: uploadFile,
+    onFileRemove: removeFile,
+    onClearAllFiles: clearAllFiles,
+    showFileUpload,
+    setShowFileUpload
   }
 
   return (
@@ -220,7 +275,7 @@ export default function ChatInterface() {
                 size="sm"
                 onClick={generateTitleForCurrent}
                 disabled={isGeneratingSummary}
-                className="text-xs border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                className="text-xs border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 <Sparkles className="w-3 h-3 mr-1" />
                 {isGeneratingSummary ? "Generating..." : "Retitle"}
@@ -266,6 +321,7 @@ export default function ChatInterface() {
                           if (line.startsWith('![Generated Image](') && line.endsWith(')')) {
                             const imageUrl = line.slice(19, -1)
                             return (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img 
                                 key={index}
                                 src={imageUrl} 
@@ -330,9 +386,14 @@ export default function ChatInterface() {
               <Input
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Message your local AI or describe an image to generate..."
+                placeholder={
+                  currentFiles.filter(f => f.status === 'ready').length > 0 
+                    ? `Ask about your uploaded files or anything else...`
+                    : "Message your local AI or describe an image to generate..."
+                }
                 className="pr-20 py-3 text-base border-gray-300 dark:border-gray-600 rounded-xl focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 disabled={isLoading || isGeneratingImage}
+                onFocus={handleInputFocus}
               />
               <div className="absolute right-2 flex items-center gap-1">
                 <Button
@@ -361,7 +422,7 @@ export default function ChatInterface() {
               </div>
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-              Chat with AI or generate images • All processing happens locally
+              Chat with AI, upload files per conversation, or generate images • All processing happens locally
             </div>
           </form>
         </div>
